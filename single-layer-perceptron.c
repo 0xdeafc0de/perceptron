@@ -50,6 +50,23 @@ double calc_output(Neuron *n, double *inp, int n_inp) {
 // tgt ->   target value
 // lr  ->   learning rate
 void train_perceptron(Neuron *n, double *inp, int n_inp, double tgt, double lr) {
+    double z = 0.0;
+    int i;
+    // op = x1.w1 + x2.w2 + ... + b
+    for (i = 0; i < n_inp; i++) {
+        z += n->weights[i] * inp[i];
+    }
+    z += n->bias;
+
+    double pred = sigmoid(z);
+    double err = tgt - pred;
+    double delta = err * sigmoid_derivative(z); //gradient
+
+    // adjust
+    for (i = 0; i < n_inp; i++) {
+        n->weights[i] += lr * delta * inp[i];
+    }
+    n->bias += lr * delta;
 }
 
 void print_neuron(Neuron *n) {
