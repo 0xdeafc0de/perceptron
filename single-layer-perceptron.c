@@ -62,7 +62,44 @@ int main() {
 
     Neuron neuron;
     init_perceptron(&neuron);
+
+    // Sample dataset: [x1, x2, x3], target
+    // Goal -> Learn simple pattern like x1 AND x2 (ignoring x3)
+    double inputs[5][3] = {
+        {0, 0, 0},  // expect 0
+        {0, 1, 1},  // expect 0
+        {1, 0, 1},  // expect 0
+        {1, 1, 0},  // expect 1
+        {1, 1, 1}   // expect 1
+    };
+    double targets[5] = {0, 0, 0, 1, 1};
+
+    int num_epoch = 10 * 1000;
+    double lr = 0.1; // learning rate
+
+    // Training loop
+    printf("Training ...\n");
+    int epoch;
+    for (epoch = 0; epoch < num_epoch; epoch++) {
+        int i;
+        for (i = 0; i < 5; i++) {
+            train_perceptron(&neuron, inputs[i], 3, targets[i], lr);
+        }
+    }
+    printf("Training completed!\n");
+
+    // output trained weights and bias
+    printf("Trained neuron - ");
     print_neuron(&neuron);
+
+    // Testing
+    printf("Testing ...\n");
+    int i;
+    for (i = 0; i < 5; i++) {
+            double out = calc_output(&neuron, inputs[i], 3);
+            printf("Input: [%.1f, %.1f, %.1f] => Predicted: %.3f (Expected: %.1f)\n",
+                inputs[i][0], inputs[i][1], inputs[i][2], out, targets[i]);
+    }
 
     return 0;
 }
