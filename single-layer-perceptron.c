@@ -29,3 +29,4 @@ void init_perceptron(Neuron *n) {
     }
     n->bias = ((double)rand() / RAND_MAX) * 2 - 1;
 }
+
