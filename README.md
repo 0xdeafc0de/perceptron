@@ -74,12 +74,14 @@ The MLP, through the process of backpropagation, discovers on its own that the b
 - Goal for mlp - To learn 'x1 XOR x2'
 
 ## How to build
-gcc single-layer-perceptron.c -o slp -lm
-gcc multi-layer-perceptron.c  -o mlp -lm
+```bash
+$ gcc single-layer-perceptron.c -o slp -lm
+$ gcc multi-layer-perceptron.c  -o mlp -lm
+```
 
 ## Example run
 ```bash
-./slp
+$ ./slp
 Training ...
 Training completed!
 Trained neuron - weights: [5.875, 5.875, -3.996], Bias: -4.940
