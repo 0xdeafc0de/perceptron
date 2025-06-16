@@ -89,4 +89,30 @@ Input: [0.0, 1.0, 1.0] => Predicted: 0.045 (Expected: 0.0)
 Input: [1.0, 0.0, 1.0] => Predicted: 0.045 (Expected: 0.0)
 Input: [1.0, 1.0, 0.0] => Predicted: 0.999 (Expected: 1.0)
 Input: [1.0, 1.0, 1.0] => Predicted: 0.943 (Expected: 1.0
+
+$ ./mlp 
+Epoch 1000/15000, MSE: 0.212942
+Epoch 2000/15000, MSE: 0.004943
+Epoch 3000/15000, MSE: 0.001831
+Epoch 4000/15000, MSE: 0.001095
+Epoch 5000/15000, MSE: 0.000774
+Epoch 6000/15000, MSE: 0.000596
+Epoch 7000/15000, MSE: 0.000484
+Epoch 8000/15000, MSE: 0.000406
+Epoch 9000/15000, MSE: 0.000350
+Epoch 10000/15000, MSE: 0.000307
+Epoch 11000/15000, MSE: 0.000273
+Epoch 12000/15000, MSE: 0.000246
+Epoch 13000/15000, MSE: 0.000224
+Epoch 14000/15000, MSE: 0.000205
+Epoch 15000/15000, MSE: 0.000190
+
+--- Testing Trained MLP on XOR data ---
+Input | Target | Prediction
+----------------------------------
+0.0, 0.0 |  0.0   | 0.0193
+0.0, 1.0 |  1.0   | 0.9871
+1.0, 0.0 |  1.0   | 0.9868
+1.0, 1.0 |  0.0   | 0.0068
+
 ```
