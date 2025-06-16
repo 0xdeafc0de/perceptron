@@ -1,17 +1,26 @@
-# Perceptron
-A perceptron is a fundamental building block of artificial intelligence and machine learning. Think of it as a simplified model of a neuron in our brain. It takes inputs, multiplies them by their respective weights, adds them up, and applies a threshold to determine its output.
+# Perceptron & Multi-Layer Perceptron (MLP)
+A perceptron is a fundamental building block of artificial intelligence and machine learning. Think of it as a simplified model of a neuron in the brain. It:
+    - Takes multiple inputs
+    - Multiplies them by their respective weights
+    - Adds them up
+    - Applies an activation function (like a threshold or sigmoid) to produce an output
 
-This output is then compared to the desired output (target), and the perceptron adjusts its weights using a process called gradient descent to minimize the difference between the actual and desired outputs. In essence, the perceptron learns from data to make predictions or classify new examples, just as we, humans, learn to make decisions in our daily lives.
+The output is compared with the target, and the perceptron adjusts its weights using a process like gradient descent to minimize the error. This is how the perceptron "learns" to make predictions, much like how humans improve decision-making through feedback.
 
-## Single-layer perceptron
-A single-layer perceptron can learn linear relationships between inputs and a single output. With 3 input signals, it would have 3 input nodes, and one output node. It is suitable for tasks where the data can be separated by a straight line (or hyperplane in higher dimensions). If the data is not linearly separable, a more complex network structure is needed. A multi-layer perceptron (MLP) can learn complex, non-linear relationships. It consists of multiple layers of neurons, including hidden layers, which allow it to model intricate patterns.
 
-This, minimal single-layer perceptron example is a great fit for educating ML from ground-up and serves as a foundation for more complex models.
+## Single-layer perceptron (SLP)
+A single-layer perceptron can learn linear relationships between inputs and outputs. For example, with 3 input features and 1 output, it forms a model like:
 
-## Multi-layer perceptron
-### Non-Linearity
-A linear method, like a single perceptron or logistic regression, tries to solve problems by separating data with a single straight line (or a flat plane in more than two dimensions). However, the non-linerar problems can't be solved with a use of single-layer perceptron.
-e.g. XOR
+```bash
+output = activation(w1·x1 + w2·x2 + w3·x3 + bias)
+```
+It works well when the data is linearly separable (i.e., can be split with a straight line or hyperplane). If not, it fails, as seen in classic problems like XOR.
+
+This minimal SLP is a great educational tool and a stepping stone to more powerful models.
+
+## Multi-layer perceptron & Non-Linearity
+Linear models like logistic regression or a single perceptron can only separate data with straight lines. But real-world problems often require non-linear decision boundaries, like the XOR problem.
+Here is XOR truth table
 ```bash
 Input1   Input2   Output
 -----    ------   ------
@@ -19,7 +28,10 @@ Input1   Input2   Output
 0        1        1
 1        0        1
 1        1        0
+```
+If you try to separate the 1s and 0s using a single line (in 2D), you'll fail:
 
+```bash
   Y-axis
   1 |  X         O
     |
@@ -28,6 +40,7 @@ Input1   Input2   Output
       0         1
         X-axis
 ```
+
 You can clearly see the linear challenge. Try to draw one single straight line to put both Xs on one side and both Os on the other.
 
 -    A horizontal line? Fails.
@@ -38,7 +51,7 @@ It's impossible. This property is called being "not linearly separable."
 
 A linear model's entire worldview is based on finding that one perfect line. Its mathematical formula is effectively the equation of a line (w1*x1 + w2*x2 + b = 0). Since no such line exists for the XOR problem, the model is fundamentally incapable of solving it. It will try its best, but its error rate will never go to zero because its core assumption (that a line can solve the problem) is wrong.
 
-### Once can ask, why XOR is Simple in Digital Computing?
+### But XOR is Simple in Digital logic. Why?
 Digital computing and hardware design don't "learn" from data. They implement explicit logical rules using physical components (transistors).
 
 The reason XOR is simple in digital is that it isn't a fundamental, indivisible operation. It is constructed from other, simpler gates that are fundamental.
@@ -67,7 +80,8 @@ The MLP, through the process of backpropagation, discovers on its own that the b
 
 ## Key Features
 - Represents a single neuron with 3 inputs
-- Trains using a simplified rule (gradient update with full error propagation)
+- Represents multi-layer model for XOR learning (with 1 hidden layer).
+- Trains using a simplified rule (gradient update with full error prop`agation)
 - Uses sigmod activation function
 - Trained on synthetic training data and test evaluation
 - Goal for slp - To learn 'x1 AND x2 (ignoring x3)'
