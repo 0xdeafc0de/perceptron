@@ -45,15 +45,37 @@ The reason XOR is simple in digital is that it isn't a fundamental, indivisible 
 
 The Boolean logic for A XOR B can be expressed using simpler AND, OR, and NOT gates:
 
+A XOR B = (A OR B) AND (NOT (A AND B))
+
+To break this down:
+-    Gate 1 (OR): Calculate A OR B. This is simple.
+-    Gate 2 (NAND): Calculate NOT (A AND B). This is also simple.
+-    Gate 3 (AND): Take the results of the first two gates and AND them together.
+
+### Why can't we do the same for perceptron based learning?
+Yes, we can do. Thats called Multi-Level Perceptron (MLP).
+The reason an MLP can solve XOR is that its hidden layer effectively learns to become the simpler logic gates needed to build XOR.
+
+When you train an MLP on the XOR data:
+
+-    Hidden Neuron 1 might learn to fire like an OR gate.
+-    Hidden Neuron 2 might learn to fire like a NAND (NOT AND) gate.
+-    The Output Neuron then learns to AND the signals from those two hidden neurons.
+
+The MLP, through the process of backpropagation, discovers on its own that the best way to solve the problem is to decompose it into simpler, linearly separable parts, mimicking the very same logic used by a digital logic. It learns to create a non-linear decision boundary by combining multiple linear boundaries.
+
+
 ## Key Features
 - Represents a single neuron with 3 inputs
-- Trains using a simplified rule (gradient update without full error propagation)
+- Trains using a simplified rule (gradient update with full error propagation)
 - Uses sigmod activation function
 - Trained on synthetic training data and test evaluation
-- Goal - To learn 'x1 AND x2 (ignoring x3)'
+- Goal for slp - To learn 'x1 AND x2 (ignoring x3)'
+- Goal for mlp - To learn 'x1 XOR x2'
 
 ## How to build
 gcc single-layer-perceptron.c -o slp -lm
+gcc multi-layer-perceptron.c  -o mlp -lm
 
 ## Example run
 ```bash
