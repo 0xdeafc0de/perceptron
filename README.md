@@ -16,11 +16,11 @@ This, minimal single-layer perceptron example is a great fit for educating ML fr
 - Goal - To learn 'x1 AND x2 (ignoring x3)'
 
 ## How to build
-gcc perceptron.c -o perceptron -lm
+gcc single-layer-perceptron.c -o slp -lm
 
 ## Example run
 ```bash
-./perceptron
+./slp
 Training ...
 Training completed!
 Trained neuron - weights: [5.875, 5.875, -3.996], Bias: -4.940
