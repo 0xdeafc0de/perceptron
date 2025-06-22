@@ -149,7 +149,9 @@ The output layer of the network contains 10 neurons. If the first neuron fires, 
 
 ### model diagram
 <img src="https://github.com/user-attachments/assets/1bb510c8-4254-49aa-9868-499f842a9226">
-**For simplicity not all 728 inputs are shown.
+
+_For simplicity not all 728 inputs are shown.
+_
 
 ### Run
 Running the binary will train the model and save it in a file.
