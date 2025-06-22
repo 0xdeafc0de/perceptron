@@ -140,7 +140,7 @@ Our training data consists of total 60000 images of handwritten digits in 28 by 
 
 ### Model
 The model is minimal and has just 3 layers - input, hidden and output. The input layer contains neurons encoding the values of the input pixels.
-As our training data consists of 28 by 28 pixel images, so the input layer contains 784=28×28 neurons. For simplicity not all 728 inputs are shown.
+As our training data consists of 28 by 28 pixel images, so the input layer contains 784=28×28 neurons.
 
 The second layer of the network is a hidden layer and contains just 15 neurons.
 
@@ -149,6 +149,7 @@ The output layer of the network contains 10 neurons. If the first neuron fires, 
 
 ### model diagram
 <img src="https://github.com/user-attachments/assets/1bb510c8-4254-49aa-9868-499f842a9226">
+**For simplicity not all 728 inputs are shown.
 
 ### Run
 Running the binary will train the model and save it in a file.
@@ -172,7 +173,7 @@ Training complete. Saving model to model.bin
 - The test uses the earlier trained (and saved) model.
 
 ```bash
-$ ./a.out test mnist_test.csv 1001
+$ ./mini_model test mnist_test.csv 1001
 Model successfully loaded from model.bin
 Doing some testing
 
