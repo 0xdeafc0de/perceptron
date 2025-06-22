@@ -132,3 +132,22 @@ Input | Target | Prediction
 1.0, 1.0 |  0.0   | 0.0068
 
 ```
+
+## mnist database
+```bash
+$ ./a.out test mnist_test.csv 0
+Model successfully loaded from model.bin
+Doing some testing
+
+Prediction for test sample 0 (label=7):
+Class 0: 0.000
+Class 1: 0.000
+Class 2: 0.000
+Class 3: 0.000
+Class 4: 0.000
+Class 5: 0.000
+Class 6: 0.000
+Class 7: 1.000
+Class 8: 0.000
+Class 9: 0.000
+```
