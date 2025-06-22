@@ -134,20 +134,41 @@ Input | Target | Prediction
 ```
 
 ## mnist database
+### Run
+Running the binary will train the model and save it in a file.
 ```bash
-$ ./a.out test mnist_test.csv 0
+$ ./mini_model
+Training on 60000 samples.... Number of iteration = 10
+Iteration....0
+Iteration....1
+Iteration....2
+Iteration....3
+Iteration....4
+Iteration....5
+Iteration....6
+Iteration....7
+Iteration....8
+Iteration....9
+Training complete. Saving model to model.bin
+```
+
+- Test Example - test 1001th row from the mnist_test.csv file
+- The test use the earlier trained (and saved) model.
+
+```bash
+$ ./a.out test mnist_test.csv 1001
 Model successfully loaded from model.bin
 Doing some testing
 
-Prediction for test sample 0 (label=7):
-Class 0: 0.000
+Prediction for test sample 1001 (label=0):
+Class 0: 0.996
 Class 1: 0.000
 Class 2: 0.000
 Class 3: 0.000
 Class 4: 0.000
-Class 5: 0.000
+Class 5: 0.004
 Class 6: 0.000
-Class 7: 1.000
+Class 7: 0.000
 Class 8: 0.000
 Class 9: 0.000
 ```
