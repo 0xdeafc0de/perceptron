@@ -153,7 +153,7 @@ Training complete. Saving model to model.bin
 ```
 
 - Test Example - test 1001th row from the mnist_test.csv file
-- The test use the earlier trained (and saved) model.
+- The test uses the earlier trained (and saved) model.
 
 ```bash
 $ ./a.out test mnist_test.csv 1001

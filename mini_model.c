@@ -11,11 +11,11 @@
 #define LEARNING_RATE 0.001
 
 // Size of hidden layer
-#define HIDDEN_UNITS 10
+#define HIDDEN_UNITS 15
 
 #define INPUT_SIZE 784
 #define NUM_CLASSES 10
-#define MAX_SAMPLES 10000
+#define MAX_SAMPLES 60000
 #define MODEL_FILE "model.bin"
 
 // Model Definition
@@ -118,7 +118,8 @@ void forward(MiniModel* m, unsigned char input[INPUT_SIZE], double* out_probs, d
 // Trains the model using cross-entropy loss and gradient descent
 void train(MiniModel* m, unsigned char** X, int Y[], int samples, int iterations, double alpha) {
     for (int iter = 0; iter < iterations; iter++) {
-        printf("\rIteration....%d", iter);
+        //printf("\rIteration....%d", iter);
+        printf("Iteration....%d\n", iter);
         fflush(stdout);
         for (int n = 0; n < samples; n++) {
             unsigned char* input = X[n];
