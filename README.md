@@ -141,7 +141,7 @@ The second layer of the network is a hidden layer and contains just 15 neurons.
 The output layer of the network contains 10 neurons. If the first neuron fires, i.e., has an output ≈1
 , then that will indicate that the network thinks the digit is a 0. If the second neuron fires then that will indicate that the network thinks the digit is a 1. And so on.
 
-https://github.com/user-attachments/assets/1bb510c8-4254-49aa-9868-499f842a9226
+<img src="https://github.com/user-attachments/assets/1bb510c8-4254-49aa-9868-499f842a9226">
 
 ### Run
 Running the binary will train the model and save it in a file.
