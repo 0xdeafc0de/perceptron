@@ -134,6 +134,15 @@ Input | Target | Prediction
 ```
 
 ## mnist database
+The model is minimal and has just 3 layers - input, hidden and output. The input layer contains neurons encoding the values of the input pixels.As our training data consists of 28 by 28 pixel images of scanned handwritten digits, and so the input layer contains 784=28×28 perceptrons/neurons. For simplicity not all 728 inputs are shown. The input pixels are greyscale, with a value of 0.0 representing white, a value of 1.0 representing black, and in between values representing gradually darkening shades of grey.
+
+The second layer of the network is a hidden layer and contains just 15 neurons.
+
+The output layer of the network contains 10 neurons. If the first neuron fires, i.e., has an output ≈1
+, then that will indicate that the network thinks the digit is a 0. If the second neuron fires then that will indicate that the network thinks the digit is a 1. And so on.
+
+https://github.com/user-attachments/assets/1bb510c8-4254-49aa-9868-499f842a9226
+
 ### Run
 Running the binary will train the model and save it in a file.
 ```bash
