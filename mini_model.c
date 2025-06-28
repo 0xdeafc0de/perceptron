@@ -17,6 +17,8 @@
 #define NUM_CLASSES 10
 #define MAX_SAMPLES 60000
 #define MODEL_FILE "model.bin"
+#define DEF_TRAINING_FILE "mnist_train.csv"
+#define DEF_TESTING_FILE  "mnist_test.csv"
 
 // Model Definition
 typedef struct {
@@ -234,8 +236,16 @@ void print_model_parameters(MiniModel *model) {
 
 int main(int argc, char** argv) {
     srand(time(NULL));
+    char* csv_file = NULL;
+    int samples;
 
-    const char* csv_file = "mnist_train.csv";
+    if (argc == 1) {
+        printf("No arguments provided... doing training on %s\n", DEF_TRAINING_FILE);
+	printf("Other options - \n");
+	printf("%s test [%s %s]\n", argv[0], "test_data_csv_file", "n");
+	printf("\t\t where n is the row index on the csv file\n");
+    }
+
     int test_index = -1;
     if (argc >= 3 && strcmp(argv[1], "test") == 0) {
         csv_file = argv[2];
@@ -245,18 +255,12 @@ int main(int argc, char** argv) {
     unsigned char** X;
     int Y[MAX_SAMPLES];
 
-    // Load dataset
-    int samples = load_csv(csv_file, &X, Y, MAX_SAMPLES);
-    if (samples == 0) {
-        fprintf(stderr, "No data loaded.\n");
-        return 1;
-    }
-
     MiniModel* model = NULL;
     int mode = 0; // 0 = train, 1 = test only, 2 = Info only
 
     if (argc >= 2) {
         if ((strcmp(argv[1], "test") == 0) || (strcmp(argv[1], "info") == 0)) {
+            printf("Loading model from file %s...\n", MODEL_FILE);
             model = load_model(MODEL_FILE);
             if (!model) {
                 fprintf(stderr, "Could not load model for testing.\n");
@@ -270,7 +274,16 @@ int main(int argc, char** argv) {
             }
         }
     } else {
-      model = NN();
+        // Load dataset
+        if (csv_file == NULL) {
+            csv_file = DEF_TRAINING_FILE;
+	}
+        samples = load_csv(csv_file, &X, Y, MAX_SAMPLES);
+        if (samples == 0) {
+            fprintf(stderr, "No data loaded.\n");
+            return 1;
+        }
+        model = NN();
         printf("Training on %d samples.... Number of iteration = %d\n", samples, NUM_ITERATIONS);
 
         train(model, X, Y, samples, NUM_ITERATIONS, LEARNING_RATE);
@@ -280,10 +293,20 @@ int main(int argc, char** argv) {
 
     // If in test mode, make prediction for a sample
     if (mode == 1) {
-        printf("Doing some testing\n");
+        if (test_index < 0) {
+            test_index = 0; // use first row from data file
+        }
+        if (csv_file == NULL) {
+            csv_file = DEF_TESTING_FILE;
+	}
+
+        samples = load_csv(csv_file, &X, Y, MAX_SAMPLES);
         if (test_index < 0 || test_index >= samples) {
             test_index = samples - 1;
         }
+        printf("testing the model %s with test data from file %s at row %d\n",
+            MODEL_FILE, csv_file, test_index);
+
         double out[NUM_CLASSES], h[HIDDEN_UNITS];
         forward(model, X[test_index], out, h);
         printf("\nPrediction for test sample %d (label=%d):\n", test_index, Y[test_index]);
