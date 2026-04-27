@@ -98,11 +98,17 @@ int main() {
 
     // Training loop
     printf("Training ...\n");
+    int indices[5] = {0, 1, 2, 3, 4};
     int epoch;
     for (epoch = 0; epoch < num_epoch; epoch++) {
+        // Shuffle training order each epoch (Fisher-Yates)
         int i;
+        for (i = 4; i > 0; i--) {
+            int j = rand() % (i + 1);
+            int tmp = indices[i]; indices[i] = indices[j]; indices[j] = tmp;
+        }
         for (i = 0; i < 5; i++) {
-            train_perceptron(&neuron, inputs[i], 3, targets[i], lr);
+            train_perceptron(&neuron, inputs[indices[i]], 3, targets[indices[i]], lr);
         }
     }
     printf("Training completed!\n");

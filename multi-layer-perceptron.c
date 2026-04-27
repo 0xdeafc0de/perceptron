@@ -128,11 +128,19 @@ int main() {
     };
 
     // Training Loop
+    int perm[NUM_TRAINING_SAMPLES];
+    for (int i = 0; i < NUM_TRAINING_SAMPLES; i++) perm[i] = i;
+
     for (int epoch = 0; epoch < EPOCHS; epoch++) {
+        // Shuffle training order each epoch (Fisher-Yates)
+        for (int i = NUM_TRAINING_SAMPLES - 1; i > 0; i--) {
+            int j = rand() % (i + 1);
+            int tmp = perm[i]; perm[i] = perm[j]; perm[j] = tmp;
+        }
         double total_error = 0;
         for (int i = 0; i < NUM_TRAINING_SAMPLES; i++) {
-            double *inputs = training_inputs[i];
-            double target = training_targets[i][0];
+            double *inputs = training_inputs[perm[i]];
+            double target = training_targets[perm[i]][0];
 
             double hidden_activations[NUM_HIDDEN_NEURONS];
             double final_output[NUM_OUTPUTS];

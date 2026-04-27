@@ -130,13 +130,22 @@ void forward(MiniModel* m, unsigned char input[INPUT_SIZE], double* out_probs, d
 
 // Trains the model using cross-entropy loss and gradient descent
 void train(MiniModel* m, unsigned char** X, int Y[], int samples, int iterations, double alpha) {
+    int* perm = (int*)malloc(samples * sizeof(int));
+    for (int i = 0; i < samples; i++) perm[i] = i;
+
     for (int iter = 0; iter < iterations; iter++) {
-        //printf("\rIteration....%d", iter);
         printf("Iteration....%d\n", iter);
         fflush(stdout);
+
+        // Shuffle training order each iteration (Fisher-Yates)
+        for (int i = samples - 1; i > 0; i--) {
+            int j = rand() % (i + 1);
+            int tmp = perm[i]; perm[i] = perm[j]; perm[j] = tmp;
+        }
+
         for (int n = 0; n < samples; n++) {
-            unsigned char* input = X[n];
-            int label = Y[n];
+            unsigned char* input = X[perm[n]];
+            int label = Y[perm[n]];
 
             // Forward pass
             double hidden[HIDDEN_UNITS];
@@ -171,6 +180,7 @@ void train(MiniModel* m, unsigned char** X, int Y[], int samples, int iterations
                 m->b1[j] -= alpha * d_hidden[j];
         }
     }
+    free(perm);
 }
 
 // Loads MNIST CSV data (label + pixels) into arrays
