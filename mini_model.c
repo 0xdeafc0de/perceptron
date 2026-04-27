@@ -134,7 +134,8 @@ void train(MiniModel* m, unsigned char** X, int Y[], int samples, int iterations
     for (int i = 0; i < samples; i++) perm[i] = i;
 
     for (int iter = 0; iter < iterations; iter++) {
-        printf("Iteration....%d\n", iter);
+        double lr = alpha / (1.0 + 1e-4 * iter); // time-based LR decay
+        printf("Iteration....%d (lr=%.6f)\n", iter, lr);
         fflush(stdout);
 
         // Shuffle training order each iteration (Fisher-Yates)
@@ -161,9 +162,9 @@ void train(MiniModel* m, unsigned char** X, int Y[], int samples, int iterations
             // Backpropagation: output to hidden
             for (int i = 0; i < HIDDEN_UNITS; i++)
                 for (int j = 0; j < NUM_CLASSES; j++)
-                    m->W2[i][j] -= alpha * d_logits[j] * hidden[i];
+                    m->W2[i][j] -= lr * d_logits[j] * hidden[i];
             for (int j = 0; j < NUM_CLASSES; j++)
-                m->b2[j] -= alpha * d_logits[j];
+                m->b2[j] -= lr * d_logits[j];
 
             // Backpropagation: hidden to input
             for (int i = 0; i < HIDDEN_UNITS; i++) {
@@ -175,9 +176,9 @@ void train(MiniModel* m, unsigned char** X, int Y[], int samples, int iterations
 
             for (int i = 0; i < INPUT_SIZE; i++)
                 for (int j = 0; j < HIDDEN_UNITS; j++)
-                    m->W1[i][j] -= alpha * d_hidden[j] * input[i] / 255.0;
+                    m->W1[i][j] -= lr * d_hidden[j] * input[i] / 255.0;
             for (int j = 0; j < HIDDEN_UNITS; j++)
-                m->b1[j] -= alpha * d_hidden[j];
+                m->b1[j] -= lr * d_hidden[j];
         }
     }
     free(perm);

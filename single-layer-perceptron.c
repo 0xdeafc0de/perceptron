@@ -100,13 +100,15 @@ int main() {
     double targets[5] = {0, 0, 0, 1, 1};
 
     int num_epoch = 10 * 1000;
-    double lr = 0.1; // learning rate
+    double lr_initial = 0.1; // initial learning rate
+    double lr_decay   = 1e-4; // time-based decay: lr = lr_initial / (1 + decay * epoch)
 
     // Training loop
     printf("Training ...\n");
     int indices[5] = {0, 1, 2, 3, 4};
     int epoch;
     for (epoch = 0; epoch < num_epoch; epoch++) {
+        double lr = lr_initial / (1.0 + lr_decay * epoch); // decayed learning rate
         // Shuffle training order each epoch (Fisher-Yates)
         int i;
         for (i = 4; i > 0; i--) {
