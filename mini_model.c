@@ -205,7 +205,7 @@ int load_csv(const char* filename, unsigned char*** X_ptr, int Y[], int max_samp
 }
 
 void print_model_parameters(MiniModel *model) {
-    printf("Model paramers from %s:\n", MODEL_FILE);
+    printf("Model parameters from %s:\n", MODEL_FILE);
     printf("Input Size: %d\n", INPUT_SIZE);
     printf("Hidden Units: %d\n", HIDDEN_UNITS);
     printf("Output Classes: %d\n", NUM_CLASSES);
