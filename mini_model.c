@@ -6,17 +6,18 @@
 
 // Training configuration
 // Set the number of iterations
-#define NUM_ITERATIONS 10
+#define NUM_ITERATIONS 50
 // Set the base learning rate
 #define LEARNING_RATE 0.001
 
 // Size of hidden layer
-#define HIDDEN_UNITS 15
+#define HIDDEN_UNITS 32
 
 #define INPUT_SIZE 784
 #define NUM_CLASSES 10
 #define MAX_SAMPLES 60000
 #define MODEL_FILE "model.bin"
+#define L2_LAMBDA 0.0  // L2 regularization strength (set to 0 to disable)
 #define DEF_TRAINING_FILE "mnist_train.csv"
 #define DEF_TESTING_FILE  "mnist_test.csv"
 
@@ -134,7 +135,8 @@ void train(MiniModel* m, unsigned char** X, int Y[], int samples, int iterations
     for (int i = 0; i < samples; i++) perm[i] = i;
 
     for (int iter = 0; iter < iterations; iter++) {
-        printf("Iteration....%d\n", iter);
+        double lr = alpha / (1.0 + 1e-4 * iter); // time-based LR decay
+        printf("Iteration....%d (lr=%.6f)\n", iter, lr);
         fflush(stdout);
 
         // Shuffle training order each iteration (Fisher-Yates)
@@ -158,12 +160,12 @@ void train(MiniModel* m, unsigned char** X, int Y[], int samples, int iterations
             for (int j = 0; j < NUM_CLASSES; j++)
                 d_logits[j] = probs[j] - (j == label ? 1.0 : 0.0);
 
-            // Backpropagation: output to hidden
+            // Backpropagation: output to hidden (with L2 regularization)
             for (int i = 0; i < HIDDEN_UNITS; i++)
                 for (int j = 0; j < NUM_CLASSES; j++)
-                    m->W2[i][j] -= alpha * d_logits[j] * hidden[i];
+                    m->W2[i][j] -= lr * (d_logits[j] * hidden[i] + L2_LAMBDA * m->W2[i][j]);
             for (int j = 0; j < NUM_CLASSES; j++)
-                m->b2[j] -= alpha * d_logits[j];
+                m->b2[j] -= lr * d_logits[j];
 
             // Backpropagation: hidden to input
             for (int i = 0; i < HIDDEN_UNITS; i++) {
@@ -175,9 +177,9 @@ void train(MiniModel* m, unsigned char** X, int Y[], int samples, int iterations
 
             for (int i = 0; i < INPUT_SIZE; i++)
                 for (int j = 0; j < HIDDEN_UNITS; j++)
-                    m->W1[i][j] -= alpha * d_hidden[j] * input[i] / 255.0;
+                    m->W1[i][j] -= lr * (d_hidden[j] * input[i] / 255.0 + L2_LAMBDA * m->W1[i][j]);
             for (int j = 0; j < HIDDEN_UNITS; j++)
-                m->b1[j] -= alpha * d_hidden[j];
+                m->b1[j] -= lr * d_hidden[j];
         }
     }
     free(perm);
@@ -248,24 +250,27 @@ int main(int argc, char** argv) {
     if (argc == 1) {
         printf("No arguments provided... doing training on %s\n", DEF_TRAINING_FILE);
 	printf("Other options - \n");
-	printf("%s test [%s %s]\n", argv[0], "test_data_csv_file", "n");
-	printf("\t\t where n is the row index on the csv file\n");
+	printf("%s test %s [n]\n", argv[0], "test_data_csv_file");
+	printf("\t\t where n = number of samples to test (default: 10)\n");
+	printf("\t\t shows each prediction then a confusion matrix + accuracy\n");
+	printf("%s eval [%s]\n", argv[0], "test_data_csv_file");
+	printf("\t\t runs batch accuracy evaluation on the entire csv file\n");
     }
 
-    int test_index = -1;
+    int test_count = 10; // default: test first 10 samples
     if (argc >= 3 && strcmp(argv[1], "test") == 0) {
         csv_file = argv[2];
-        if (argc >= 4) test_index = atoi(argv[3]);
+        if (argc >= 4) test_count = atoi(argv[3]);
     }
 
     unsigned char** X = NULL;
     int Y[MAX_SAMPLES];
 
     MiniModel* model = NULL;
-    int mode = 0; // 0 = train, 1 = test only, 2 = Info only
+    int mode = 0; // 0 = train, 1 = test single sample, 2 = info only, 3 = eval (batch accuracy)
 
     if (argc >= 2) {
-        if ((strcmp(argv[1], "test") == 0) || (strcmp(argv[1], "info") == 0)) {
+        if ((strcmp(argv[1], "test") == 0) || (strcmp(argv[1], "info") == 0) || (strcmp(argv[1], "eval") == 0)) {
             printf("Loading model from file %s...\n", MODEL_FILE);
             model = load_model(MODEL_FILE);
             if (!model) {
@@ -277,6 +282,9 @@ int main(int argc, char** argv) {
             if (strcmp(argv[1], "info") == 0) {
                 mode = 2;
                 print_model_parameters(model);
+            } else if (strcmp(argv[1], "eval") == 0) {
+                mode = 3;
+                if (argc >= 3) csv_file = argv[2];
             }
         }
     } else {
@@ -297,28 +305,146 @@ int main(int argc, char** argv) {
         save_model(model, MODEL_FILE);
     }
 
-    // If in test mode, make prediction for a sample
-    if (mode == 1) {
-        if (test_index < 0) {
-            test_index = 0; // use first row from data file
+    // Batch accuracy evaluation mode
+    if (mode == 3) {
+        if (csv_file == NULL) csv_file = DEF_TESTING_FILE;
+        samples = load_csv(csv_file, &X, Y, MAX_SAMPLES);
+        if (samples == 0) {
+            fprintf(stderr, "No data loaded from %s.\n", csv_file);
+            return 1;
         }
-        if (csv_file == NULL) {
-            csv_file = DEF_TESTING_FILE;
-	}
+        printf("Evaluating model on %d samples from %s...\n", samples, csv_file);
+
+        int correct = 0;
+        int per_class_correct[NUM_CLASSES] = {0};
+        int per_class_total[NUM_CLASSES]   = {0};
+        for (int i = 0; i < samples; i++) {
+            double out[NUM_CLASSES], h[HIDDEN_UNITS];
+            forward(model, X[i], out, h);
+            int predicted = 0;
+            for (int j = 1; j < NUM_CLASSES; j++)
+                if (out[j] > out[predicted]) predicted = j;
+            per_class_total[Y[i]]++;
+            if (predicted == Y[i]) {
+                correct++;
+                per_class_correct[Y[i]]++;
+            }
+        }
+        printf("\nOverall accuracy: %d / %d = %.2f%%\n", correct, samples,
+               100.0 * correct / samples);
+        printf("\nPer-class accuracy:\n");
+        for (int c = 0; c < NUM_CLASSES; c++) {
+            printf("  Class %d: %4d / %4d = %.2f%%\n", c,
+                   per_class_correct[c], per_class_total[c],
+                   per_class_total[c] > 0 ? 100.0 * per_class_correct[c] / per_class_total[c] : 0.0);
+        }
+    }
+
+    // If in test mode, run N samples and show confusion matrix
+    if (mode == 1) {
+        if (csv_file == NULL) csv_file = DEF_TESTING_FILE;
 
         samples = load_csv(csv_file, &X, Y, MAX_SAMPLES);
-        if (test_index < 0 || test_index >= samples) {
-            test_index = samples - 1;
+        if (samples == 0) {
+            fprintf(stderr, "No data loaded from %s.\n", csv_file);
+            return 1;
         }
-        printf("testing the model %s with test data from file %s at row %d\n",
-            MODEL_FILE, csv_file, test_index);
+        if (test_count > samples) test_count = samples;
 
-        double out[NUM_CLASSES], h[HIDDEN_UNITS];
-        forward(model, X[test_index], out, h);
-        printf("\nPrediction for test sample %d (label=%d):\n", test_index, Y[test_index]);
-        for (int i = 0; i < NUM_CLASSES; i++) {
-            printf("Class %d: %.3f\n", i, out[i]);
+        // Print model card / info header
+        int w1_params = (INPUT_SIZE * HIDDEN_UNITS);
+        int b1_params = HIDDEN_UNITS;
+        int w2_params = (HIDDEN_UNITS * NUM_CLASSES);
+        int b2_params = NUM_CLASSES;
+        int total_params = w1_params + b1_params + w2_params + b2_params;
+
+        printf("╔════════════════════════════════════════════════════════════════╗\n");
+        printf("║                    MINI MODEL — Test Report                    ║\n");
+        printf("╠════════════════════════════════════════════════════════════════╣\n");
+        printf("║ Architecture:  784 → %d → 10  (Fully Connected, ReLU+Softmax)  ║\n", HIDDEN_UNITS);
+        printf("║ Parameters:    %d total  (W1:%d b1:%d | W2:%d b2:%d)               ║\n",
+               total_params, w1_params, b1_params, w2_params, b2_params);
+        printf("║ Training:      %d iterations, LR=%.4f (with decay)               ║\n",
+               NUM_ITERATIONS, LEARNING_RATE);
+        printf("║ Dataset:       MNIST (%d×784px grayscale images, 10 classes)    ║\n", 28);
+        printf("║ Inference:     %d test samples from %s                ║\n",
+               test_count, csv_file);
+        printf("╚════════════════════════════════════════════════════════════════╝\n\n");
+
+        printf("Testing %d sample(s)...\n\n", test_count);
+
+        // confusion matrix: [actual][predicted]
+        int confusion[NUM_CLASSES][NUM_CLASSES] = {{0}};
+        int correct = 0;
+
+        for (int i = 0; i < test_count; i++) {
+            double out[NUM_CLASSES], h[HIDDEN_UNITS];
+            forward(model, X[i], out, h);
+
+            int predicted = 0;
+            for (int j = 1; j < NUM_CLASSES; j++)
+                if (out[j] > out[predicted]) predicted = j;
+
+            confusion[Y[i]][predicted]++;
+            if (predicted == Y[i]) correct++;
+
+            // show probability bar for the top prediction
+            printf("  Sample %4d | actual=%-2d predicted=%-2d %s  (%.1f%%)\n",
+                   i, Y[i], predicted,
+                   predicted == Y[i] ? "OK " : "ERR",
+                   out[predicted] * 100.0);
         }
+
+        // ── confusion matrix ────────────────────────────────────────────────
+        printf("\n  Confusion Matrix (rows=actual, cols=predicted):\n");
+        printf("  actual \\ pred  ");
+        for (int c = 0; c < NUM_CLASSES; c++) printf(" %4d", c);
+        printf("\n  ");
+        for (int c = 0; c < NUM_CLASSES + 4; c++) printf("-----");
+        printf("\n");
+        for (int a = 0; a < NUM_CLASSES; a++) {
+            printf("  class %-9d", a);
+            for (int p = 0; p < NUM_CLASSES; p++) {
+                if (confusion[a][p] == 0)
+                    printf("    .");
+                else if (a == p)
+                    printf(" %4d", confusion[a][p]);  // correct on diagonal
+                else
+                    printf(" %4d", confusion[a][p]);  // errors off diagonal
+            }
+            printf("\n");
+        }
+
+        printf("\n  Accuracy: %d / %d = %.2f%%\n",
+               correct, test_count, 100.0 * correct / test_count);
+
+        // Summary footer with model performance
+        printf("\n╔════════════════════════════════════════════════════════════════╗\n");
+        printf("║                      Test Summary                              ║\n");
+        printf("╠════════════════════════════════════════════════════════════════╣\n");
+        printf("║ Correct:       %d / %d  (%.2f%%)                                   ║\n",
+               correct, test_count, 100.0 * correct / test_count);
+        printf("║ Errors:        %d / %d  (%.2f%%)                                   ║\n",
+               test_count - correct, test_count, 100.0 * (test_count - correct) / test_count);
+
+        // Find worst-performing class
+        double worst_acc = 100.0;
+        int worst_class = 0;
+        for (int c = 0; c < NUM_CLASSES; c++) {
+            int class_total = 0;
+            for (int p = 0; p < NUM_CLASSES; p++)
+                class_total += confusion[c][p];
+            if (class_total > 0) {
+                double acc = 100.0 * confusion[c][c] / class_total;
+                if (acc < worst_acc) {
+                    worst_acc = acc;
+                    worst_class = c;
+                }
+            }
+        }
+        printf("║ Weakest class: %d (%.2f%%)                                        ║\n",
+               worst_class, worst_acc);
+        printf("╚════════════════════════════════════════════════════════════════╝\n");
     }
 
     // Cleanup

@@ -10,6 +10,7 @@
 #define NUM_TRAINING_SAMPLES 4
 #define EPOCHS 15000
 #define LEARNING_RATE 0.5
+#define LR_DECAY_RATE 1e-5 // time-based decay: lr = LEARNING_RATE / (1 + decay * epoch)
 
 // --- Structures ---
 typedef struct {
@@ -73,7 +74,7 @@ void forward_pass(MLP *mlp, const double inputs[], double *hidden_activations, d
     }
 }
 
-void backward_pass(MLP *mlp, const double inputs[], double target, double *hidden_activations, double *final_output) {
+void backward_pass(MLP *mlp, const double inputs[], double target, double *hidden_activations, double *final_output, double lr) {
     // 1. Calculate output layer error and delta
     double output_errors[NUM_OUTPUTS];
     double output_deltas[NUM_OUTPUTS];
@@ -95,15 +96,15 @@ void backward_pass(MLP *mlp, const double inputs[], double target, double *hidde
 
     // 3. Update weights and biases
     for (int k = 0; k < NUM_OUTPUTS; k++) {
-        mlp->bias_o[k] += output_deltas[k] * LEARNING_RATE;
+        mlp->bias_o[k] += output_deltas[k] * lr;
         for (int j = 0; j < NUM_HIDDEN_NEURONS; j++) {
-            mlp->weights_ho[j][k] += hidden_activations[j] * output_deltas[k] * LEARNING_RATE;
+            mlp->weights_ho[j][k] += hidden_activations[j] * output_deltas[k] * lr;
         }
     }
     for (int j = 0; j < NUM_HIDDEN_NEURONS; j++) {
-        mlp->bias_h[j] += hidden_deltas[j] * LEARNING_RATE;
+        mlp->bias_h[j] += hidden_deltas[j] * lr;
         for (int i = 0; i < NUM_INPUTS; i++) {
-            mlp->weights_ih[i][j] += inputs[i] * hidden_deltas[j] * LEARNING_RATE;
+            mlp->weights_ih[i][j] += inputs[i] * hidden_deltas[j] * lr;
         }
     }
 }
@@ -132,6 +133,7 @@ int main() {
     for (int i = 0; i < NUM_TRAINING_SAMPLES; i++) perm[i] = i;
 
     for (int epoch = 0; epoch < EPOCHS; epoch++) {
+        double lr = LEARNING_RATE / (1.0 + LR_DECAY_RATE * epoch); // decayed learning rate
         // Shuffle training order each epoch (Fisher-Yates)
         for (int i = NUM_TRAINING_SAMPLES - 1; i > 0; i--) {
             int j = rand() % (i + 1);
@@ -146,7 +148,7 @@ int main() {
             double final_output[NUM_OUTPUTS];
 
             forward_pass(&mlp, inputs, hidden_activations, final_output);
-            backward_pass(&mlp, inputs, target, hidden_activations, final_output);
+            backward_pass(&mlp, inputs, target, hidden_activations, final_output, lr);
             total_error += (target - final_output[0]) * (target - final_output[0]);
         }
         if ((epoch + 1) % 1000 == 0) {
