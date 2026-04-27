@@ -237,7 +237,7 @@ int main(int argc, char** argv) {
         if (argc >= 4) test_index = atoi(argv[3]);
     }
 
-    unsigned char** X;
+    unsigned char** X = NULL;
     int Y[MAX_SAMPLES];
 
     MiniModel* model = NULL;
@@ -301,10 +301,12 @@ int main(int argc, char** argv) {
     }
 
     // Cleanup
-    for (int i = 0; i < MAX_SAMPLES; i++) {
-        free(X[i]);
+    if (X != NULL) {
+        for (int i = 0; i < MAX_SAMPLES; i++) {
+            free(X[i]);
+        }
+        free(X);
     }
-    free(X);
     free(model);
 
     return 0;
