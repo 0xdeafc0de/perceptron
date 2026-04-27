@@ -251,6 +251,8 @@ int main(int argc, char** argv) {
 	printf("Other options - \n");
 	printf("%s test [%s %s]\n", argv[0], "test_data_csv_file", "n");
 	printf("\t\t where n is the row index on the csv file\n");
+	printf("%s eval [%s]\n", argv[0], "test_data_csv_file");
+	printf("\t\t runs batch accuracy evaluation on the entire csv file\n");
     }
 
     int test_index = -1;
@@ -263,10 +265,10 @@ int main(int argc, char** argv) {
     int Y[MAX_SAMPLES];
 
     MiniModel* model = NULL;
-    int mode = 0; // 0 = train, 1 = test only, 2 = Info only
+    int mode = 0; // 0 = train, 1 = test single sample, 2 = info only, 3 = eval (batch accuracy)
 
     if (argc >= 2) {
-        if ((strcmp(argv[1], "test") == 0) || (strcmp(argv[1], "info") == 0)) {
+        if ((strcmp(argv[1], "test") == 0) || (strcmp(argv[1], "info") == 0) || (strcmp(argv[1], "eval") == 0)) {
             printf("Loading model from file %s...\n", MODEL_FILE);
             model = load_model(MODEL_FILE);
             if (!model) {
@@ -278,6 +280,9 @@ int main(int argc, char** argv) {
             if (strcmp(argv[1], "info") == 0) {
                 mode = 2;
                 print_model_parameters(model);
+            } else if (strcmp(argv[1], "eval") == 0) {
+                mode = 3;
+                if (argc >= 3) csv_file = argv[2];
             }
         }
     } else {
@@ -296,6 +301,41 @@ int main(int argc, char** argv) {
         train(model, X, Y, samples, NUM_ITERATIONS, LEARNING_RATE);
         printf("Training complete. Saving model to %s\n\n", MODEL_FILE);
         save_model(model, MODEL_FILE);
+    }
+
+    // Batch accuracy evaluation mode
+    if (mode == 3) {
+        if (csv_file == NULL) csv_file = DEF_TESTING_FILE;
+        samples = load_csv(csv_file, &X, Y, MAX_SAMPLES);
+        if (samples == 0) {
+            fprintf(stderr, "No data loaded from %s.\n", csv_file);
+            return 1;
+        }
+        printf("Evaluating model on %d samples from %s...\n", samples, csv_file);
+
+        int correct = 0;
+        int per_class_correct[NUM_CLASSES] = {0};
+        int per_class_total[NUM_CLASSES]   = {0};
+        for (int i = 0; i < samples; i++) {
+            double out[NUM_CLASSES], h[HIDDEN_UNITS];
+            forward(model, X[i], out, h);
+            int predicted = 0;
+            for (int j = 1; j < NUM_CLASSES; j++)
+                if (out[j] > out[predicted]) predicted = j;
+            per_class_total[Y[i]]++;
+            if (predicted == Y[i]) {
+                correct++;
+                per_class_correct[Y[i]]++;
+            }
+        }
+        printf("\nOverall accuracy: %d / %d = %.2f%%\n", correct, samples,
+               100.0 * correct / samples);
+        printf("\nPer-class accuracy:\n");
+        for (int c = 0; c < NUM_CLASSES; c++) {
+            printf("  Class %d: %4d / %4d = %.2f%%\n", c,
+                   per_class_correct[c], per_class_total[c],
+                   per_class_total[c] > 0 ? 100.0 * per_class_correct[c] / per_class_total[c] : 0.0);
+        }
     }
 
     // If in test mode, make prediction for a sample
