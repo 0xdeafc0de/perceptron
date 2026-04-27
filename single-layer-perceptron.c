@@ -3,9 +3,11 @@
 #include <math.h>
 #include <time.h>
 
+#define N_FEATURES 3 // number of input features
+
 // A Neuron
 typedef struct {
-    double weights[3]; // 3 Input  features {x1, x2, x3}
+    double weights[N_FEATURES]; // Input features {x1, x2, x3}
     double bias;
     double output;     // current output value
 } Neuron;
@@ -25,8 +27,8 @@ double sigmoid_derivative(double z) {
 // Xavier: weights ~ Uniform[-sqrt(6/(fan_in+fan_out)), +sqrt(6/(fan_in+fan_out))]
 void init_perceptron(Neuron *n) {
     int i;
-    double limit = sqrt(6.0 / (3 + 1)); // fan_in=3 inputs, fan_out=1 output
-    for (i = 0; i < 3; i++) {
+    double limit = sqrt(6.0 / (N_FEATURES + 1)); // fan_in=N_FEATURES, fan_out=1 output
+    for (i = 0; i < N_FEATURES; i++) {
         n->weights[i] = ((double)rand() / RAND_MAX) * 2.0 * limit - limit;
     }
     n->bias = 0.0; // biases initialized to zero
@@ -72,8 +74,12 @@ void train_perceptron(Neuron *n, double *inp, int n_inp, double tgt, double lr) 
 }
 
 void print_neuron(Neuron *n) {
-    printf("weights: [%.3f, %.3f, %.3f], Bias: %.3f\n",
-        n->weights[0], n->weights[1], n->weights[2], n->bias);
+    int i;
+    printf("weights: [");
+    for (i = 0; i < N_FEATURES; i++) {
+        printf("%.3f%s", n->weights[i], i < N_FEATURES - 1 ? ", " : "");
+    }
+    printf("], Bias: %.3f\n", n->bias);
 }
 
 int main() {
@@ -108,7 +114,7 @@ int main() {
             int tmp = indices[i]; indices[i] = indices[j]; indices[j] = tmp;
         }
         for (i = 0; i < 5; i++) {
-            train_perceptron(&neuron, inputs[indices[i]], 3, targets[indices[i]], lr);
+            train_perceptron(&neuron, inputs[indices[i]], N_FEATURES, targets[indices[i]], lr);
         }
     }
     printf("Training completed!\n");
@@ -121,7 +127,7 @@ int main() {
     printf("Testing ...\n");
     int i;
     for (i = 0; i < 5; i++) {
-            double out = calc_output(&neuron, inputs[i], 3);
+            double out = calc_output(&neuron, inputs[i], N_FEATURES);
             printf("Input: [%.1f, %.1f, %.1f] => Predicted: %.3f (Expected: %.1f)\n",
                 inputs[i][0], inputs[i][1], inputs[i][2], out, targets[i]);
     }
