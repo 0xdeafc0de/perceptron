@@ -249,16 +249,17 @@ int main(int argc, char** argv) {
     if (argc == 1) {
         printf("No arguments provided... doing training on %s\n", DEF_TRAINING_FILE);
 	printf("Other options - \n");
-	printf("%s test [%s %s]\n", argv[0], "test_data_csv_file", "n");
-	printf("\t\t where n is the row index on the csv file\n");
+	printf("%s test %s [n]\n", argv[0], "test_data_csv_file");
+	printf("\t\t where n = number of samples to test (default: 10)\n");
+	printf("\t\t shows each prediction then a confusion matrix + accuracy\n");
 	printf("%s eval [%s]\n", argv[0], "test_data_csv_file");
 	printf("\t\t runs batch accuracy evaluation on the entire csv file\n");
     }
 
-    int test_index = -1;
+    int test_count = 10; // default: test first 10 samples
     if (argc >= 3 && strcmp(argv[1], "test") == 0) {
         csv_file = argv[2];
-        if (argc >= 4) test_index = atoi(argv[3]);
+        if (argc >= 4) test_count = atoi(argv[3]);
     }
 
     unsigned char** X = NULL;
@@ -338,28 +339,64 @@ int main(int argc, char** argv) {
         }
     }
 
-    // If in test mode, make prediction for a sample
+    // If in test mode, run N samples and show confusion matrix
     if (mode == 1) {
-        if (test_index < 0) {
-            test_index = 0; // use first row from data file
-        }
-        if (csv_file == NULL) {
-            csv_file = DEF_TESTING_FILE;
-	}
+        if (csv_file == NULL) csv_file = DEF_TESTING_FILE;
 
         samples = load_csv(csv_file, &X, Y, MAX_SAMPLES);
-        if (test_index < 0 || test_index >= samples) {
-            test_index = samples - 1;
+        if (samples == 0) {
+            fprintf(stderr, "No data loaded from %s.\n", csv_file);
+            return 1;
         }
-        printf("testing the model %s with test data from file %s at row %d\n",
-            MODEL_FILE, csv_file, test_index);
+        if (test_count > samples) test_count = samples;
 
-        double out[NUM_CLASSES], h[HIDDEN_UNITS];
-        forward(model, X[test_index], out, h);
-        printf("\nPrediction for test sample %d (label=%d):\n", test_index, Y[test_index]);
-        for (int i = 0; i < NUM_CLASSES; i++) {
-            printf("Class %d: %.3f\n", i, out[i]);
+        printf("Testing %d sample(s) from %s using model %s\n\n",
+               test_count, csv_file, MODEL_FILE);
+
+        // confusion matrix: [actual][predicted]
+        int confusion[NUM_CLASSES][NUM_CLASSES] = {{0}};
+        int correct = 0;
+
+        for (int i = 0; i < test_count; i++) {
+            double out[NUM_CLASSES], h[HIDDEN_UNITS];
+            forward(model, X[i], out, h);
+
+            int predicted = 0;
+            for (int j = 1; j < NUM_CLASSES; j++)
+                if (out[j] > out[predicted]) predicted = j;
+
+            confusion[Y[i]][predicted]++;
+            if (predicted == Y[i]) correct++;
+
+            // show probability bar for the top prediction
+            printf("  Sample %4d | actual=%-2d predicted=%-2d %s  (%.1f%%)\n",
+                   i, Y[i], predicted,
+                   predicted == Y[i] ? "OK " : "ERR",
+                   out[predicted] * 100.0);
         }
+
+        // ── confusion matrix ────────────────────────────────────────────────
+        printf("\n  Confusion Matrix (rows=actual, cols=predicted):\n");
+        printf("  actual \\ pred  ");
+        for (int c = 0; c < NUM_CLASSES; c++) printf(" %4d", c);
+        printf("\n  ");
+        for (int c = 0; c < NUM_CLASSES + 4; c++) printf("-----");
+        printf("\n");
+        for (int a = 0; a < NUM_CLASSES; a++) {
+            printf("  class %-9d", a);
+            for (int p = 0; p < NUM_CLASSES; p++) {
+                if (confusion[a][p] == 0)
+                    printf("    .");
+                else if (a == p)
+                    printf(" %4d", confusion[a][p]);  // correct on diagonal
+                else
+                    printf(" %4d", confusion[a][p]);  // errors off diagonal
+            }
+            printf("\n");
+        }
+
+        printf("\n  Accuracy: %d / %d = %.2f%%\n",
+               correct, test_count, 100.0 * correct / test_count);
     }
 
     // Cleanup
