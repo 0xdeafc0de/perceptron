@@ -116,6 +116,17 @@ int main() {
         for (i = 0; i < 5; i++) {
             train_perceptron(&neuron, inputs[indices[i]], N_FEATURES, targets[indices[i]], lr);
         }
+        // Log MSE every 1000 epochs
+        if ((epoch + 1) % 1000 == 0) {
+            double mse = 0.0;
+            int k;
+            for (k = 0; k < 5; k++) {
+                double out = calc_output(&neuron, inputs[k], N_FEATURES);
+                double err = targets[k] - out;
+                mse += err * err;
+            }
+            printf("Epoch %d/%d, MSE: %.6f\n", epoch + 1, num_epoch, mse / 5);
+        }
     }
     printf("Training completed!\n");
 
