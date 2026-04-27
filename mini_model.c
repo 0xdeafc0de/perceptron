@@ -6,17 +6,18 @@
 
 // Training configuration
 // Set the number of iterations
-#define NUM_ITERATIONS 10
+#define NUM_ITERATIONS 50
 // Set the base learning rate
 #define LEARNING_RATE 0.001
 
 // Size of hidden layer
-#define HIDDEN_UNITS 15
+#define HIDDEN_UNITS 32
 
 #define INPUT_SIZE 784
 #define NUM_CLASSES 10
 #define MAX_SAMPLES 60000
 #define MODEL_FILE "model.bin"
+#define L2_LAMBDA 0.0  // L2 regularization strength (set to 0 to disable)
 #define DEF_TRAINING_FILE "mnist_train.csv"
 #define DEF_TESTING_FILE  "mnist_test.csv"
 
@@ -159,10 +160,10 @@ void train(MiniModel* m, unsigned char** X, int Y[], int samples, int iterations
             for (int j = 0; j < NUM_CLASSES; j++)
                 d_logits[j] = probs[j] - (j == label ? 1.0 : 0.0);
 
-            // Backpropagation: output to hidden
+            // Backpropagation: output to hidden (with L2 regularization)
             for (int i = 0; i < HIDDEN_UNITS; i++)
                 for (int j = 0; j < NUM_CLASSES; j++)
-                    m->W2[i][j] -= lr * d_logits[j] * hidden[i];
+                    m->W2[i][j] -= lr * (d_logits[j] * hidden[i] + L2_LAMBDA * m->W2[i][j]);
             for (int j = 0; j < NUM_CLASSES; j++)
                 m->b2[j] -= lr * d_logits[j];
 
@@ -176,7 +177,7 @@ void train(MiniModel* m, unsigned char** X, int Y[], int samples, int iterations
 
             for (int i = 0; i < INPUT_SIZE; i++)
                 for (int j = 0; j < HIDDEN_UNITS; j++)
-                    m->W1[i][j] -= lr * d_hidden[j] * input[i] / 255.0;
+                    m->W1[i][j] -= lr * (d_hidden[j] * input[i] / 255.0 + L2_LAMBDA * m->W1[i][j]);
             for (int j = 0; j < HIDDEN_UNITS; j++)
                 m->b1[j] -= lr * d_hidden[j];
         }
