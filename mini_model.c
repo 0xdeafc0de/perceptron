@@ -127,26 +127,11 @@ void train(MiniModel* m, unsigned char** X, int Y[], int samples, int iterations
             unsigned char* input = X[n];
             int label = Y[n];
 
-            // Forward pass (hidden layer)
+            // Forward pass
             double hidden[HIDDEN_UNITS];
             double d_hidden[HIDDEN_UNITS];
-            for (int j = 0; j < HIDDEN_UNITS; j++) {
-                hidden[j] = m->b1[j];
-                for (int i = 0; i < INPUT_SIZE; i++)
-                    hidden[j] += input[i] / 255.0 * m->W1[i][j];
-                hidden[j] = relu(hidden[j]);
-            }
-
-            // Forward pass (output layer)
-            double logits[NUM_CLASSES];
-            for (int j = 0; j < NUM_CLASSES; j++) {
-                logits[j] = m->b2[j];
-                for (int i = 0; i < HIDDEN_UNITS; i++)
-                    logits[j] += hidden[i] * m->W2[i][j];
-            }
-
             double probs[NUM_CLASSES];
-            softmax(logits, NUM_CLASSES, probs);
+            forward(m, input, probs, hidden);
 
             // Gradient of loss w.r.t logits
             double d_logits[NUM_CLASSES];
