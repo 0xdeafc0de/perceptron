@@ -81,16 +81,46 @@ The MLP, through the process of backpropagation, discovers on its own that the b
 ## Key Features
 - Represents a single neuron with 3 inputs
 - Represents multi-layer model for XOR learning (with 1 hidden layer).
-- Trains using a simplified rule (gradient update with full error prop`agation)
-- Uses sigmod activation function
+- Trains using a simplified rule (gradient update with full error propagation)
+- Uses sigmoid activation function (SLP/MLP) and ReLU + softmax (mini model)
 - Trained on synthetic training data and test evaluation
 - Goal for slp - To learn 'x1 AND x2 (ignoring x3)'
 - Goal for mlp - To learn 'x1 XOR x2'
 
+## Enhancements
+The following improvements were applied over the original student implementation:
+
+| # | Change | Files |
+|---|--------|-------|
+| 1 | **Xavier/He weight initialization** — Xavier uniform for sigmoid layers, He uniform for ReLU layers. Replaces naive `[-1, 1]` uniform init which causes slow/unstable training. | all |
+| 2 | **Fisher-Yates shuffle each epoch** — Randomises sample order before every training pass, preventing gradient bias from fixed ordering. | all |
+| 3 | **MSE loss logging** — Reports mean squared error every 1000 epochs so convergence is visible during training. | SLP, MLP |
+| 4 | **Time-based learning rate decay** — `lr = lr₀ / (1 + decay × epoch)`. Helps fine-tune weights in later epochs without manual tuning. | all |
+| 5 | **`N_FEATURES` define** — Eliminates the mismatch between the hardcoded struct array size (`weights[3]`) and the runtime `n_inp` argument. | SLP |
+| 6 | **Refactor duplicate forward pass** — `train()` called `forward()` instead of re-implementing the same logic inline. | mini_model |
+| 7 | **Memory safety fix** — `X` initialised to `NULL`; cleanup guarded to prevent crash when running `info` mode (no data loaded). | mini_model |
+| 8 | **`eval` command** — Batch accuracy evaluation over an entire CSV dataset with per-class breakdown. | mini_model |
+
 ## How to build
+
+A `setup.sh` script handles downloading the MNIST dataset, converting it to CSV, and building all binaries.
+
 ```bash
-$ gcc single-layer-perceptron.c -o slp -lm
-$ gcc multi-layer-perceptron.c  -o mlp -lm
+# Full setup: download MNIST data + build all binaries
+$ ./setup.sh
+
+# Or step by step:
+$ ./setup.sh --data     # download & convert MNIST CSVs
+$ ./setup.sh --build    # compile all three binaries
+$ ./setup.sh --train    # train mini_model on mnist_train.csv
+$ ./setup.sh --test     # run smoke tests on all models
+```
+
+To build manually without the script:
+```bash
+$ gcc -Wall -O2 single-layer-perceptron.c -o slp -lm
+$ gcc -Wall -O2 multi-layer-perceptron.c  -o mlp -lm
+$ gcc -Wall -O2 mini_model.c              -o mini_model -lm
 ```
 
 ## Example run
@@ -154,40 +184,65 @@ _For simplicity not all 728 inputs are shown.
 _
 
 ### Run
-Running the binary will train the model and save it in a file.
+Running the binary will train the model on `mnist_train.csv` and save the weights to `model.bin`.
+
 ```bash
+# Train (requires mnist_train.csv — run ./setup.sh --data first)
 $ ./mini_model
 Training on 60000 samples.... Number of iteration = 10
-Iteration....0
-Iteration....1
-Iteration....2
-Iteration....3
-Iteration....4
-Iteration....5
-Iteration....6
-Iteration....7
-Iteration....8
-Iteration....9
+Iteration....0 (lr=0.001000)
+Iteration....1 (lr=0.000999)
+...
+Iteration....9 (lr=0.000991)
 Training complete. Saving model to model.bin
 ```
 
-- Test Example - test 1001th row from the mnist_test.csv file
-- The test uses the earlier trained (and saved) model.
+- **Single sample test** — predict the digit for a specific row in a CSV:
 
 ```bash
 $ ./mini_model test mnist_test.csv 1001
+Loading model from file model.bin...
 Model successfully loaded from model.bin
-Doing some testing
+testing the model model.bin with test data from file mnist_test.csv at row 1001
 
 Prediction for test sample 1001 (label=0):
 Class 0: 0.996
 Class 1: 0.000
-Class 2: 0.000
-Class 3: 0.000
-Class 4: 0.000
-Class 5: 0.004
-Class 6: 0.000
-Class 7: 0.000
-Class 8: 0.000
-Class 9: 0.000
+...
+```
+
+- **Batch accuracy evaluation** — run against an entire dataset:
+
+```bash
+$ ./mini_model eval mnist_test.csv
+Loading model from file model.bin...
+Model successfully loaded from model.bin
+Evaluating model on 10000 samples from mnist_test.csv...
+
+Overall accuracy: 9407 / 10000 = 94.07%
+
+Per-class accuracy:
+  Class 0:  969 /  980 = 98.88%
+  Class 1: 1115 / 1135 = 98.24%
+  Class 2:  941 / 1032 = 91.18%
+  Class 3:  937 / 1010 = 92.77%
+  Class 4:  914 /  982 = 93.08%
+  Class 5:  826 /  892 = 92.60%
+  Class 6:  903 /  958 = 94.26%
+  Class 7:  916 / 1028 = 89.11%
+  Class 8:  923 /  974 = 94.76%
+  Class 9:  963 / 1009 = 95.44%
+```
+
+> **94.07% accuracy** on 10,000 test samples with only 11,935 parameters (784→15→10 network).
+
+- **Model info**:
+
+```bash
+$ ./mini_model info
+Model parameters from model.bin:
+Input Size: 784
+Hidden Units: 15
+Output Classes: 10
+Total Parameters: 11935
 ```
