@@ -21,13 +21,15 @@ double sigmoid_derivative(double z) {
     return s * (1 - s);
 }
 
-// Initialize perceptron weights and bias randomly
+// Initialize perceptron weights using Xavier uniform init (for sigmoid activation)
+// Xavier: weights ~ Uniform[-sqrt(6/(fan_in+fan_out)), +sqrt(6/(fan_in+fan_out))]
 void init_perceptron(Neuron *n) {
     int i;
+    double limit = sqrt(6.0 / (3 + 1)); // fan_in=3 inputs, fan_out=1 output
     for (i = 0; i < 3; i++) {
-        n->weights[i] = ((double)rand() / RAND_MAX) * 2 - 1; // [-1, 1]
+        n->weights[i] = ((double)rand() / RAND_MAX) * 2.0 * limit - limit;
     }
-    n->bias = ((double)rand() / RAND_MAX) * 2 - 1;
+    n->bias = 0.0; // biases initialized to zero
 }
 
 // calculate neuron output for a given set of input

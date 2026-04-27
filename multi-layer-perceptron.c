@@ -30,21 +30,25 @@ double sigmoid_derivative(double x) {
 }
 
 // Initialize MLP with random weights and biases
+// Initialize MLP using Xavier uniform init (suited for sigmoid activations)
+// Xavier: weights ~ Uniform[-sqrt(6/(fan_in+fan_out)), +sqrt(6/(fan_in+fan_out))]
 void init_mlp(MLP *mlp) {
     srand(time(NULL));
+    double limit_ih = sqrt(6.0 / (NUM_INPUTS + NUM_HIDDEN_NEURONS));
+    double limit_ho = sqrt(6.0 / (NUM_HIDDEN_NEURONS + NUM_OUTPUTS));
     for (int i = 0; i < NUM_INPUTS; i++) {
         for (int j = 0; j < NUM_HIDDEN_NEURONS; j++) {
-            mlp->weights_ih[i][j] = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+            mlp->weights_ih[i][j] = ((double)rand() / RAND_MAX) * 2.0 * limit_ih - limit_ih;
         }
     }
     for (int i = 0; i < NUM_HIDDEN_NEURONS; i++) {
-        mlp->bias_h[i] = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+        mlp->bias_h[i] = 0.0; // biases initialized to zero
         for (int j = 0; j < NUM_OUTPUTS; j++) {
-            mlp->weights_ho[i][j] = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+            mlp->weights_ho[i][j] = ((double)rand() / RAND_MAX) * 2.0 * limit_ho - limit_ho;
         }
     }
     for (int i = 0; i < NUM_OUTPUTS; i++) {
-        mlp->bias_o[i] = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+        mlp->bias_o[i] = 0.0; // biases initialized to zero
     }
 }
 

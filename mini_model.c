@@ -53,8 +53,16 @@ void softmax(double* input, int size, double* output) {
 }
 
 // Generates a random weight in range [-1, 1]
-double rand_weight() {
-    return ((double)rand() / RAND_MAX) * 0.1 - 0.05;
+// He uniform init for ReLU layers: weights ~ Uniform[-sqrt(6/fan_in), +sqrt(6/fan_in)]
+static inline double he_uniform(int fan_in) {
+    double limit = sqrt(6.0 / fan_in);
+    return ((double)rand() / RAND_MAX) * 2.0 * limit - limit;
+}
+
+// Xavier uniform init for output layers (softmax): weights ~ Uniform[-sqrt(6/(fan_in+fan_out)), ...]
+static inline double xavier_uniform(int fan_in, int fan_out) {
+    double limit = sqrt(6.0 / (fan_in + fan_out));
+    return ((double)rand() / RAND_MAX) * 2.0 * limit - limit;
 }
 
 // Serializes model to file
@@ -79,22 +87,25 @@ MiniModel* load_model(const char* filename) {
     return m;
 }
 
-// Create and initialize a new MiniModel with random weights
+// Create and initialize a new MiniModel with principled random weights
 MiniModel* NN() {
     MiniModel* m = (MiniModel*)malloc(sizeof(MiniModel));
+
+    // He uniform init for W1: feeds into ReLU hidden layer
     for (int i = 0; i < INPUT_SIZE; i++)
         for (int j = 0; j < HIDDEN_UNITS; j++)
-            m->W1[i][j] = rand_weight();
+            m->W1[i][j] = he_uniform(INPUT_SIZE);
 
     for (int j = 0; j < HIDDEN_UNITS; j++)
-        m->b1[j] = rand_weight();
+        m->b1[j] = 0.0; // biases initialized to zero
 
+    // Xavier uniform init for W2: feeds into softmax output layer
     for (int i = 0; i < HIDDEN_UNITS; i++)
         for (int j = 0; j < NUM_CLASSES; j++)
-            m->W2[i][j] = rand_weight();
+            m->W2[i][j] = xavier_uniform(HIDDEN_UNITS, NUM_CLASSES);
 
     for (int j = 0; j < NUM_CLASSES; j++)
-        m->b2[j] = rand_weight();
+        m->b2[j] = 0.0; // biases initialized to zero
 
     return m;
 }
