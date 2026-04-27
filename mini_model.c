@@ -351,8 +351,27 @@ int main(int argc, char** argv) {
         }
         if (test_count > samples) test_count = samples;
 
-        printf("Testing %d sample(s) from %s using model %s\n\n",
-               test_count, csv_file, MODEL_FILE);
+        // Print model card / info header
+        int w1_params = (INPUT_SIZE * HIDDEN_UNITS);
+        int b1_params = HIDDEN_UNITS;
+        int w2_params = (HIDDEN_UNITS * NUM_CLASSES);
+        int b2_params = NUM_CLASSES;
+        int total_params = w1_params + b1_params + w2_params + b2_params;
+
+        printf("╔════════════════════════════════════════════════════════════════╗\n");
+        printf("║                    MINI MODEL — Test Report                    ║\n");
+        printf("╠════════════════════════════════════════════════════════════════╣\n");
+        printf("║ Architecture:  784 → %d → 10  (Fully Connected, ReLU+Softmax)  ║\n", HIDDEN_UNITS);
+        printf("║ Parameters:    %d total  (W1:%d b1:%d | W2:%d b2:%d)               ║\n",
+               total_params, w1_params, b1_params, w2_params, b2_params);
+        printf("║ Training:      %d iterations, LR=%.4f (with decay)               ║\n",
+               NUM_ITERATIONS, LEARNING_RATE);
+        printf("║ Dataset:       MNIST (%d×784px grayscale images, 10 classes)    ║\n", 28);
+        printf("║ Inference:     %d test samples from %s                ║\n",
+               test_count, csv_file);
+        printf("╚════════════════════════════════════════════════════════════════╝\n\n");
+
+        printf("Testing %d sample(s)...\n\n", test_count);
 
         // confusion matrix: [actual][predicted]
         int confusion[NUM_CLASSES][NUM_CLASSES] = {{0}};
@@ -398,6 +417,34 @@ int main(int argc, char** argv) {
 
         printf("\n  Accuracy: %d / %d = %.2f%%\n",
                correct, test_count, 100.0 * correct / test_count);
+
+        // Summary footer with model performance
+        printf("\n╔════════════════════════════════════════════════════════════════╗\n");
+        printf("║                      Test Summary                              ║\n");
+        printf("╠════════════════════════════════════════════════════════════════╣\n");
+        printf("║ Correct:       %d / %d  (%.2f%%)                                   ║\n",
+               correct, test_count, 100.0 * correct / test_count);
+        printf("║ Errors:        %d / %d  (%.2f%%)                                   ║\n",
+               test_count - correct, test_count, 100.0 * (test_count - correct) / test_count);
+
+        // Find worst-performing class
+        double worst_acc = 100.0;
+        int worst_class = 0;
+        for (int c = 0; c < NUM_CLASSES; c++) {
+            int class_total = 0;
+            for (int p = 0; p < NUM_CLASSES; p++)
+                class_total += confusion[c][p];
+            if (class_total > 0) {
+                double acc = 100.0 * confusion[c][c] / class_total;
+                if (acc < worst_acc) {
+                    worst_acc = acc;
+                    worst_class = c;
+                }
+            }
+        }
+        printf("║ Weakest class: %d (%.2f%%)                                        ║\n",
+               worst_class, worst_acc);
+        printf("╚════════════════════════════════════════════════════════════════╝\n");
     }
 
     // Cleanup
